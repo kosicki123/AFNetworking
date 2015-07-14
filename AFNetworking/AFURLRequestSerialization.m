@@ -106,6 +106,14 @@ static NSString * AFPercentEscapedQueryStringValueFromStringWithEncoding(NSStrin
     }
 }
 
+- (NSString *)URLEncodedRestValueWithEncoding:(NSStringEncoding)stringEncoding {
+    if (!self.value || [self.value isEqual:[NSNull null]]) {
+        return AFPercentEscapedQueryStringKeyFromStringWithEncoding([self.field description], stringEncoding);
+    } else {
+        return [NSString stringWithFormat:@"%@", AFPercentEscapedQueryStringValueFromStringWithEncoding([self.value description], stringEncoding)];
+    }
+}
+
 @end
 
 #pragma mark -
@@ -120,6 +128,15 @@ static NSString * AFQueryStringFromParametersWithEncoding(NSDictionary *paramete
     }
 
     return [mutablePairs componentsJoinedByString:@"&"];
+}
+
+static NSString * AFRestFromParametersWithEncoding(NSDictionary *parameters, NSStringEncoding stringEncoding) {
+    NSMutableArray *mutablePairs = [NSMutableArray array];
+    for (AFQueryStringPair *pair in AFQueryStringPairsFromDictionary(parameters)) {
+        [mutablePairs addObject:[pair URLEncodedRestValueWithEncoding:stringEncoding]];
+    }
+    
+    return [mutablePairs componentsJoinedByString:@"/"];
 }
 
 NSArray * AFQueryStringPairsFromDictionary(NSDictionary *dictionary) {
@@ -371,6 +388,32 @@ forHTTPHeaderField:(NSString *)field
 	return mutableRequest;
 }
 
+- (NSMutableURLRequest *)requestRestWithMethod:(NSString *)method
+                                 URLString:(NSString *)URLString
+                                parameters:(id)parameters
+                                     error:(NSError *__autoreleasing *)error
+{
+    NSParameterAssert(method);
+    NSParameterAssert(URLString);
+    
+    NSURL *url = [NSURL URLWithString:URLString];
+    
+    NSParameterAssert(url);
+    
+    NSMutableURLRequest *mutableRequest = [[NSMutableURLRequest alloc] initWithURL:url];
+    mutableRequest.HTTPMethod = method;
+    
+    for (NSString *keyPath in AFHTTPRequestSerializerObservedKeyPaths()) {
+        if ([self.mutableObservedChangedKeyPaths containsObject:keyPath]) {
+            [mutableRequest setValue:[self valueForKeyPath:keyPath] forKey:keyPath];
+        }
+    }
+    
+    mutableRequest = [[self requestRestBySerializingRequest:mutableRequest withParameters:parameters error:error] mutableCopy];
+    
+    return mutableRequest;
+}
+
 - (NSMutableURLRequest *)multipartFormRequestWithMethod:(NSString *)method
                                               URLString:(NSString *)URLString
                                              parameters:(NSDictionary *)parameters
@@ -504,6 +547,9 @@ forHTTPHeaderField:(NSString *)field
                 case AFHTTPRequestQueryStringDefaultStyle:
                     query = AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding);
                     break;
+                case AFHTTPRequestRestStyle:
+                    query = AFRestFromParametersWithEncoding(parameters, self.stringEncoding);
+                    break;
             }
         }
 
@@ -517,6 +563,50 @@ forHTTPHeaderField:(NSString *)field
         }
     }
 
+    return mutableRequest;
+}
+
+- (NSURLRequest *)requestRestBySerializingRequest:(NSURLRequest *)request
+                               withParameters:(id)parameters
+                                        error:(NSError *__autoreleasing *)error
+{
+    NSParameterAssert(request);
+    
+    NSMutableURLRequest *mutableRequest = [request mutableCopy];
+    
+    [self.HTTPRequestHeaders enumerateKeysAndObjectsUsingBlock:^(id field, id value, BOOL * __unused stop) {
+        if (![request valueForHTTPHeaderField:field]) {
+            [mutableRequest setValue:value forHTTPHeaderField:field];
+        }
+    }];
+    
+    if (parameters) {
+        NSString *query = nil;
+        if (self.queryStringSerialization) {
+            NSError *serializationError;
+            query = self.queryStringSerialization(request, parameters, &serializationError);
+            
+            if (serializationError) {
+                if (error) {
+                    *error = serializationError;
+                }
+                
+                return nil;
+            }
+        } else {
+            query = AFRestFromParametersWithEncoding(parameters, self.stringEncoding);
+        }
+        
+        if ([self.HTTPMethodsEncodingParametersInURI containsObject:[[request HTTPMethod] uppercaseString]]) {
+            mutableRequest.URL = [NSURL URLWithString:[[mutableRequest.URL absoluteString] stringByAppendingFormat:mutableRequest.URL.query ? @"%@" : @"/%@", query]];
+        } else {
+            if (![mutableRequest valueForHTTPHeaderField:@"Content-Type"]) {
+                [mutableRequest setValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
+            }
+            [mutableRequest setHTTPBody:[query dataUsingEncoding:self.stringEncoding]];
+        }
+    }
+    
     return mutableRequest;
 }
 
