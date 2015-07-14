@@ -43,6 +43,11 @@
 - (NSURLRequest *)requestBySerializingRequest:(NSURLRequest *)request
                                withParameters:(id)parameters
                                         error:(NSError * __autoreleasing *)error;
+
+/**
+ Use this method to encode parameters using rest style.
+ E.g: http://url/method/param1/param2
+ */
 - (NSMutableURLRequest *)requestRestWithMethod:(NSString *)method
                                      URLString:(NSString *)URLString
                                     parameters:(id)parameters
