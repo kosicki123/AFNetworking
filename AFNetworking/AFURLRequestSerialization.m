@@ -409,8 +409,11 @@ forHTTPHeaderField:(NSString *)field
         }
     }
     
-    mutableRequest = [[self requestRestBySerializingRequest:mutableRequest withParameters:parameters error:error] mutableCopy];
-    
+    if ([method isEqualToString:@"POST"]) {
+        mutableRequest = [[self requestBySerializingRequest:mutableRequest withParameters:parameters error:error] mutableCopy];
+    } else {
+        mutableRequest = [[self requestRestBySerializingRequest:mutableRequest withParameters:parameters error:error] mutableCopy];
+    }
     return mutableRequest;
 }
 
@@ -594,7 +597,12 @@ forHTTPHeaderField:(NSString *)field
                 return nil;
             }
         } else {
-            query = AFRestFromParametersWithEncoding(parameters, self.stringEncoding);
+            if ([[[request HTTPMethod] uppercaseString] isEqualToString:@"POST"]) {
+                query = AFQueryStringFromParametersWithEncoding(parameters, self.stringEncoding);
+
+            } else {
+                query = AFRestFromParametersWithEncoding(parameters, self.stringEncoding);
+            }
         }
         
         if ([self.HTTPMethodsEncodingParametersInURI containsObject:[[request HTTPMethod] uppercaseString]]) {
