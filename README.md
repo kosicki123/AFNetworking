@@ -1,5 +1,7 @@
 AFRestNetworking is a fork of AFNetworking. The main difference is that you can specify the format of query string on get requests.
 
+*** REMEMBER TO USE ARRAY OF PARAMETERS TO GET (to keep order of params) ***
+
 Your path variable will be formatted like this:<br>
 http://url/method/XXXXXX/30<br>
 Instead of the standard query string:<br>
