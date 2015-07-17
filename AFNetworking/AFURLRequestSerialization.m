@@ -119,6 +119,7 @@ static NSString * AFPercentEscapedQueryStringValueFromStringWithEncoding(NSStrin
 #pragma mark -
 
 extern NSArray * AFQueryStringPairsFromDictionary(NSDictionary *dictionary);
+extern NSArray * AFQueryStringPairsFromArray(NSArray *array);
 extern NSArray * AFQueryStringPairsFromKeyAndValue(NSString *key, id value);
 
 static NSString * AFQueryStringFromParametersWithEncoding(NSDictionary *parameters, NSStringEncoding stringEncoding) {
@@ -130,9 +131,9 @@ static NSString * AFQueryStringFromParametersWithEncoding(NSDictionary *paramete
     return [mutablePairs componentsJoinedByString:@"&"];
 }
 
-static NSString * AFRestFromParametersWithEncoding(NSDictionary *parameters, NSStringEncoding stringEncoding) {
+static NSString * AFRestFromParametersWithEncoding(NSArray *parameters, NSStringEncoding stringEncoding) {
     NSMutableArray *mutablePairs = [NSMutableArray array];
-    for (AFQueryStringPair *pair in AFQueryStringPairsFromDictionary(parameters)) {
+    for (AFQueryStringPair *pair in AFQueryStringPairsFromArray(parameters)) {
         [mutablePairs addObject:[pair URLEncodedRestValueWithEncoding:stringEncoding]];
     }
     
@@ -141,6 +142,10 @@ static NSString * AFRestFromParametersWithEncoding(NSDictionary *parameters, NSS
 
 NSArray * AFQueryStringPairsFromDictionary(NSDictionary *dictionary) {
     return AFQueryStringPairsFromKeyAndValue(nil, dictionary);
+}
+
+NSArray * AFQueryStringPairsFromArray(NSArray *array) {
+    return AFQueryStringPairsFromKeyAndValue(nil, array);
 }
 
 NSArray * AFQueryStringPairsFromKeyAndValue(NSString *key, id value) {
