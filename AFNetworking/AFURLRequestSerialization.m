@@ -255,7 +255,7 @@ static void *AFHTTPRequestSerializerObserverContext = &AFHTTPRequestSerializerOb
     }
 
     // HTTP Method Definitions; see http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html
-    self.HTTPMethodsEncodingParametersInURI = [NSSet setWithObjects:@"GET", @"HEAD", nil];
+    self.HTTPMethodsEncodingParametersInURI = [NSSet setWithObjects:@"GET", @"HEAD", @"DELETE", nil];
 
     self.mutableObservedChangedKeyPaths = [NSMutableSet set];
     for (NSString *keyPath in AFHTTPRequestSerializerObservedKeyPaths()) {
@@ -414,7 +414,7 @@ forHTTPHeaderField:(NSString *)field
         }
     }
     
-    if ([method isEqualToString:@"POST"]) {
+    if ([method isEqualToString:@"POST"] || [method isEqualToString:@"DELETE"]) {
         mutableRequest = [[self requestBySerializingRequest:mutableRequest withParameters:parameters error:error] mutableCopy];
     } else {
         mutableRequest = [[self requestRestBySerializingRequest:mutableRequest withParameters:parameters error:error] mutableCopy];
