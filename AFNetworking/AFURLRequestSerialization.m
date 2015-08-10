@@ -414,7 +414,7 @@ forHTTPHeaderField:(NSString *)field
         }
     }
     
-    if ([method isEqualToString:@"POST"] || [method isEqualToString:@"DELETE"]) {
+    if ([method isEqualToString:@"POST"] || [method isEqualToString:@"DELETE"] || [method isEqualToString:@"PUT"]) {
         mutableRequest = [[self requestBySerializingRequest:mutableRequest withParameters:parameters error:error] mutableCopy];
     } else {
         mutableRequest = [[self requestRestBySerializingRequest:mutableRequest withParameters:parameters error:error] mutableCopy];
